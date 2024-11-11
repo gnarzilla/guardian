@@ -1,0 +1,54 @@
+[project]
+name = "guardian"
+version = "1.0.0"
+description = "Git Authentication & Development Assistant"
+requires-python = ">=3.8"
+dependencies = [
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "keyring>=24.0.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+guardian = "guardian.cli:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=guardian --cov-report=xml --cov-report=term-missing"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[project.urls]
+Homepage = "https://github.com/None/-home-thatch-dev-guardian"
+Documentation = "https://-home-thatch-dev-guardian.readthedocs.io/"
+Repository = "https://github.com/None/-home-thatch-dev-guardian.git"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/guardian"]

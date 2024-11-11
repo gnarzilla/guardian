@@ -1,0 +1,55 @@
+# mkdocs.yml
+site_name: Guardian
+site_description: Git Authentication & Development Assistant
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: cyan
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - def_list
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - User Guide:
+    - Authentication:
+      - SSH Keys: user-guide/auth/ssh.md
+      - GitHub Tokens: user-guide/auth/tokens.md
+      - GPG Keys: user-guide/auth/gpg.md
+    - Repository Management:
+      - Initialization: user-guide/repo/init.md
+      - Templates: user-guide/repo/templates.md
+      - Hooks: user-guide/repo/hooks.md
+    - Security:
+      - Scanning: user-guide/security/scanning.md
+      - Key Management: user-guide/security/keys.md
+      - Best Practices: user-guide/security/best-practices.md
+  - API Reference:
+    - Auth Service: api/auth.md
+    - Config Service: api/config.md
+    - Repo Service: api/repo.md
+    - Security Service: api/security.md
+  - Contributing:
+    - Development Setup: contributing/setup.md
+    - Code Style: contributing/style.md
+    - Testing: contributing/testing.md
+  - Roadmap: roadmap.md
