@@ -1,154 +1,117 @@
-# Guardian
+# deadlight-guardian
 
-```
-    ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗ ██╗ █████╗ ███╗   ██╗
-    ██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗██║██╔══██╗████╗  ██║
-    ██║  ███╗██║   ██║███████║██████╔╝██║  ██║██║███████║██╔██╗ ██║
-    ██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║██║██╔══██║██║╚██╗██║
-    ╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝██║██║  ██║██║ ╚████║
-    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝
-```
-
-[![PyPI version](https://badge.fury.io/py/guardian-git.svg)](https://badge.fury.io/py/guardian-git)
-[![CI Status](https://github.com/yourusername/guardian/workflows/CI/badge.svg)](https://github.com/yourusername/guardian/actions)
-[![Documentation Status](https://readthedocs.org/projects/guardian-git/badge/?version=latest)](https://guardian-git.readthedocs.io/en/latest/?badge=latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-Git User Authentication & Repository Development Interface Assistant & Navigator
+Git Authentication & Development Interface Assistant & Navigator
 
 ## Features
 
-🔒 **Secure Authentication Management**
-- SSH key generation and management
-- Personal Access Token secure storage
-- GitHub CLI credential management
-- System keyring integration
+### Cli
+Guardian: Git Authentication & Development Assistant
+    
+    A comprehensive tool for managing Git authentication, security,
+    and development workflows.
+    
 
-🧩 **Configuration Management**
-- Git config backup and restore
-- SSH key backup with encryption
-- Automated config migration
+### Auth
+Authentication management commands
 
-🧪 **Code Quality Tools**
-- Pre-commit hook automation
-- Code formatting with black
-- Import sorting with isort
-- Type checking with mypy
+- `cli auth setup-github`: Configure GitHub Personal Access Token (PAT) for authentication
+- `cli auth setup-ssh`: Generate and configure SSH keys
+- `cli auth status`: Check status of all authentication methods
+- `cli auth validate-github`: Validate GitHub token and show its capabilities
+- `cli auth list`: List configured authentication methods
+- `cli auth debug-tokens`: Debug token storage (development only)
+- `cli auth debug-service`: Debug auth service configuration
+- `cli auth setup-signing`: Setup GPG key for commit signing
+### Config
+Configuration management commands
 
-📊 **Security Features**
-- Audit logging for auth events
-- Key rotation management
-- Configurable security levels
-- Encrypted backup storage
+- `cli config set`: Set a configuration value
+- `cli config get`: Get a configuration value
+- `cli config unset`: Remove a configuration value
+- `cli config init`: Initialize configuration with defaults
+### Hooks
+Pre-commit hook management
+
+- `cli hooks templates`: List available hook templates
+- `cli hooks install`: Install Git hooks using specified template
+- `cli hooks list`: List installed hooks and their status
+- `cli hooks show`: Show content of an installed hook
+- `cli hooks remove`: Remove an installed hook
+### Format
+Code formatting commands
+
+- `cli format run`: Format code using configured formatters
+- `cli format configure`: Configure formatting settings
+- `cli init`: Initialize Guardian in the current directory
+### Repo
+Repository and remote management commands
+
+- `cli repo create`: Create a remote repository for the current project
+- `cli repo connect`: Connect existing repository to a remote
+- `cli repo sync`: Synchronize repository configuration across systems
+- `cli repo apply-sync`: Apply synchronized configuration from .guardian-sync.yml
 
 ## Installation
 
-### Via pip (recommended)
 ```bash
-pip install guardian-git
-```
-
-### From source
-```bash
-git clone https://github.com/yourusername/guardian.git
-cd guardian
-pip install -e ".[dev]"
+pip install deadlight-guardian
 ```
 
 ## Quick Start
 
-### Authentication Setup
 ```bash
 # Initialize Guardian
 guardian init
 
-# Setup SSH authentication
+# Setup authentication
 guardian auth setup-ssh
-
-# Configure GitHub tokens
 guardian auth setup-github
+
+# Check status
+guardian auth status
 ```
 
-### Code Quality Tools
+## Usage Examples
+
+Here are some common use cases:
+
+### Setting up a new machine
 ```bash
-# Install pre-commit hooks
+# Install Guardian
+pip install deadlight-guardian
+
+# Setup authentication
+guardian auth setup-ssh
+guardian auth setup-github
+
+# Verify setup
+guardian auth status
+```
+
+### Managing Git configurations
+```bash
+# View current configuration
+guardian config get
+
+# Set configuration
+guardian config set user.name "Your Name"
+guardian config set user.email "your@email.com"
+```
+
+### Working with hooks
+```bash
+# Install hooks
 guardian hooks install
 
-# Format code
-guardian format .
-
-# Run all checks
-guardian check
+# View installed hooks
+guardian hooks list
 ```
 
-### Configuration Management
-```bash
-# Backup current configuration
-guardian backup create
-
-# Restore from backup
-guardian backup restore <backup-name>
-
-# Rotate SSH keys
-guardian auth rotate-keys
-```
-
-## CLI Reference
-
-### Main Commands
-- `guardian init`: Initialize Guardian in current directory
-- `guardian auth`: Authentication management commands
-- `guardian format`: Code formatting commands
-- `guardian hooks`: Pre-commit hook management
-- `guardian backup`: Configuration backup commands
-- `guardian check`: Run all configured checks
-
-### Command Groups
-```
-guardian/
-├── auth/
-│   ├── setup-ssh      # SSH key setup
-│   ├── setup-github   # GitHub token setup
-│   └── rotate-keys    # Key rotation
-├── format/
-│   ├── run           # Run formatters
-│   └── check         # Check formatting
-└── hooks/
-    ├── install       # Install pre-commit hooks
-    └── update        # Update hook configurations
-```
-
-## Configuration
-
-Guardian can be configured via `guardian.yaml` in your project root:
-
-```yaml
-security:
-  level: enhanced  # basic, enhanced, or paranoid
-  backup_encryption: true
-  audit_logging: true
-
-formatting:
-  black_enabled: true
-  isort_enabled: true
-  mypy_enabled: true
-
-hooks:
-  pre_commit:
-    - black
-    - isort
-    - mypy
-```
+For more examples and detailed documentation, visit our [documentation site](docs/).
 
 ## Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-1. Clone the repository
-2. Install development dependencies: `pip install -e ".[dev]"`
-3. Install pre-commit hooks: `pre-commit install`
-4. Run tests: `pytest`
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## License
 
