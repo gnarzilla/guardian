@@ -1,0 +1,9 @@
+# src/guardian/templates/hooks/default.yml
+hooks:
+  pre-commit:
+    name: "Default Pre-commit Hook"
+    description: "Basic formatting and security checks"
+    steps:
+      - name: "Check formatting"
+        command: "guardian format run --check"
+        fail_on_error: true

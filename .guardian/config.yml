@@ -1,0 +1,10 @@
+
+security:
+  level: standard
+  backup_encryption: true
+  audit_logging: true
+
+formatting:
+  black_enabled: true
+  isort_enabled: true
+  mypy_enabled: true

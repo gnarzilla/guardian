@@ -1,0 +1,21 @@
+# src/guardian/templates/hooks/strict.yml
+hooks:
+  pre-commit:
+    name: "Strict Pre-commit Hook"
+    description: "Enhanced checks with strict requirements"
+    steps:
+      - name: "Lint check"
+        command: "pylint ."
+        fail_on_error: true
+      
+      - name: "Type check"
+        command: "mypy ."
+        fail_on_error: true
+      
+      - name: "Format check"
+        command: "guardian format run --check"
+        fail_on_error: true
+      
+      - name: "Security scan"
+        command: "guardian security scan --strict"
+        fail_on_error: true

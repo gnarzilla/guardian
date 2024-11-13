@@ -1,30 +1,24 @@
 # src/guardian/core/__init__.py
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
-import logging
 from pathlib import Path
-
-# Configure root logger
-logging.basicConfig(level=logging.WARNING) # Change from DEBUG to WARNING
-
-# Configure individual loggers
-for logger_name in ['guardian.services.keyring', 'keyring.backend']:
-    logging.getLogger(logger_name).setLevel(logging.WARNING)
+import logging
 
 @dataclass
 class Result:
+    """Standard result object for all operations"""
     success: bool
     message: str
     data: Optional[Dict[str, Any]] = None
     error: Optional[Exception] = None
 
 class Service:
-    """Base service class"""
+    """Base class for all Guardian services"""
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config_dir = Path.home() / '.guardian'
         self.config_dir.mkdir(exist_ok=True)
-
+    
     def create_result(self, success: bool, message: str, 
                      data: Optional[Dict[str, Any]] = None,
                      error: Optional[Exception] = None) -> Result:
