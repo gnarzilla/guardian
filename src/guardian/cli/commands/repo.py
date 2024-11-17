@@ -3,8 +3,7 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 from pathlib import Path
-import subprocess
-from typing import Optional
+from guardian.services.git import GitService
 
 console = Console()
 
@@ -195,3 +194,184 @@ def apply_sync(ctx):
         
     except Exception as e:
         console.print(f"[red]✗[/red] Failed to apply configuration: {str(e)}")
+
+@repo.command()
+@click.argument('path', type=click.Path(exists=True))
+@click.option('--remote', default='origin', help='Remote name')
+@click.option('--branch', help='Branch to push')
+@click.pass_context
+def push(ctx, path, remote, branch):
+    """Push changes to remote repository"""
+    try:
+        path = Path(path)
+        if not (path / '.git').exists():
+            console.print("[red]✗[/red] Not a git repository")
+            return
+        
+        cmd = ['git', 'push', remote]
+        if branch:
+            cmd.append(branch)
+        
+        # Check auth before pushing
+        auth_status = ctx.obj.auth.check_auth_status()
+        if not auth_status.success:
+            console.print("[yellow]![/yellow] Authentication issues detected:")
+            for issue in auth_status.data['issues']:
+                console.print(f"  • {issue}")
+            if not click.confirm("Continue anyway?"):
+                return
+        
+        result = subprocess.run(cmd, cwd=path, capture_output=True, text=True)
+        if result.returncode == 0:
+            console.print("[green]✓[/green] Push successful")
+        else:
+            console.print(f"[red]✗[/red] Push failed: {result.stderr}")
+            
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error: {str(e)}")
+
+@repo.command()
+@click.argument('url')
+@click.option('--path', type=click.Path(), help='Local path to clone into')
+@click.pass_context
+def pull(ctx, url, path):
+    """Pull from remote repository"""
+    try:
+        if path:
+            path = Path(path)
+        else:
+            path = Path('.')
+            
+        cmd = ['git', 'pull']
+        if url:
+            cmd.extend(['origin', url])
+            
+        result = subprocess.run(cmd, cwd=path, capture_output=True, text=True)
+        if result.returncode == 0:
+            console.print("[green]✓[/green] Pull successful")
+        else:
+            console.print(f"[red]✗[/red] Pull failed: {result.stderr}")
+            
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error: {str(e)}")
+
+# Update the status command to handle all platforms
+@repo.command()
+@click.pass_context
+def status(ctx):
+    """Check repository status and remote connection"""
+    git_service = GitService()
+    
+    # Check current branch
+    branch_result = git_service.get_current_branch()
+    if branch_result.success:
+        console.print(Panel(
+            f"Current branch: [green]{branch_result.data['branch']}[/green]",
+            title="Local Status"
+        ))
+        
+        # Check remote connection
+        remote_result = git_service.check_remote()
+        if remote_result.success:
+            platform = remote_result.data['platform']
+            # Get appropriate token
+            token = ctx.obj.auth.keyring.get_credential(f'{platform}_token_default')
+            if token:
+                # Verify repository
+                verify_result = git_service.verify_repo(
+                    platform,
+                    token,
+                    remote_result.data['owner'],
+                    remote_result.data['repo']
+                )
+                
+                if verify_result.success:
+                    console.print(Panel(
+                        "\n".join([
+                            f"Platform: [cyan]{platform.title()}[/cyan]",
+                            f"Owner: [cyan]{remote_result.data['owner']}[/cyan]",
+                            f"Repository: [cyan]{remote_result.data['repo']}[/cyan]",
+                            f"Default branch: [cyan]{verify_result.data['default_branch']}[/cyan]",
+                            f"Private: [cyan]{verify_result.data['private']}[/cyan]",
+                            "",
+                            "[bold]Permissions:[/bold]",
+                            *[f"• {k}: [green]Yes[/green]" if v else f"• {k}: [red]No[/red]"
+                              for k, v in verify_result.data['permissions'].items()]
+                        ]),
+                        title=f"{platform.title()} Status"
+                    ))
+                    
+                    # Check if on default branch
+                    if branch_result.data['branch'] != verify_result.data['default_branch']:
+                        console.print(f"[yellow]Note: You are not on the default branch ({verify_result.data['default_branch']})[/yellow]")
+                else:
+                    console.print(f"[yellow]{verify_result.message}[/yellow]")
+            else:
+                console.print(f"[yellow]No {platform.title()} token configured[/yellow]")
+                console.print(f"Run: guardian auth setup-{platform}")
+        else:
+            console.print("[yellow]Not connected to a remote repository[/yellow]")
+    else:
+        console.print("[red]Not a git repository[/red]")
+
+@repo.group()
+def migrate():
+    """Repository migration commands"""
+    pass
+
+@migrate.command()
+@click.argument('source_repo')
+@click.argument('target_platform')
+@click.option('--target-repo', help='Target repository name (default: same as source)')
+@click.pass_context
+def plan(ctx, source_repo, target_platform, target_repo):
+    """Plan repository migration"""
+    git_service = GitService()
+    
+    # Get source platform
+    remote_result = git_service.check_remote(Path(source_repo))
+    if not remote_result.success:
+        console.print("[red]✗[/red] Could not determine source platform")
+        return
+    
+    source_platform = remote_result.data['platform']
+    target_repo = target_repo or remote_result.data['repo']
+    
+    # Create migration planner
+    try:
+        source = create_platform(source_platform, ctx.obj.auth)
+        target = create_platform(target_platform, ctx.obj.auth)
+        
+        migration = PlatformMigration(source, target)
+        plan = migration.create_migration_plan(source_repo, target_repo)
+        
+        # Show migration plan
+        console.print(Panel(
+            "\n".join([
+                f"Source: [cyan]{plan.source_platform}[/cyan] ({plan.source_repo})",
+                f"Target: [cyan]{plan.target_platform}[/cyan] ({plan.target_repo})",
+                "",
+                "[bold]Items to migrate:[/bold]",
+                *[f"• {item}: {'[green]Yes[/green]' if enabled else '[red]No[/red]'}"
+                  for item, enabled in plan.items.items()],
+                "",
+                f"Estimated time: [yellow]{plan.estimated_time}[/yellow] minutes"
+            ]),
+            title="Migration Plan"
+        ))
+        
+    except Exception as e:
+        console.print(f"[red]✗[/red] Failed to create migration plan: {str(e)}")
+
+@migrate.command()
+@click.argument('source_repo')
+@click.argument('target_platform')
+@click.option('--target-repo', help='Target repository name')
+@click.option('--skip', multiple=True, 
+              type=click.Choice(['issues', 'pull_requests', 'wiki', 'actions']),
+              help='Items to skip during migration')
+@click.pass_context
+def execute(ctx, source_repo, target_platform, target_repo, skip):
+    """Execute repository migration"""
+    # Similar to plan, but executes the migration
+    pass

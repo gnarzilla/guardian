@@ -211,6 +211,7 @@ def validate_github(ctx):
         console.print("1. Run: guardian auth setup-github")
         console.print("2. Visit: https://github.com/settings/tokens")
 
+
 @auth.command()
 @click.pass_context
 def list(ctx):
@@ -220,7 +221,13 @@ def list(ctx):
     if ssh_result.success and ssh_result.data.get('keys'):
         console.print("\n[bold]SSH Keys:[/bold]")
         for key in ssh_result.data['keys']:
-            console.print(f"  • {key}")
+            console.print(f"\n• Type: {key['type']}")
+            console.print(f"  Path: {key['path']}")
+            console.print(Panel(
+                key['content'],
+                title="Public Key Content",
+                expand=False
+            ))
     else:
         console.print("\n[dim]No SSH keys found[/dim]")
 
@@ -324,3 +331,64 @@ def setup_signing(ctx, name, email):
         console.print("\nTo remove incomplete setup:")
         console.print("  guardian config unset user.signingkey")
         console.print("  guardian config unset commit.gpgsign")
+
+@auth.command()
+@click.option('--token', help='GitLab Personal Access Token')
+@click.pass_context
+def setup_gitlab(ctx, token):
+    """Configure GitLab Personal Access Token"""
+    if not token:
+        console.print(Panel(
+            Markdown("""
+            # Creating a GitLab Personal Access Token (PAT)
+
+            1. Visit [GitLab Token Settings](https://gitlab.com/-/profile/personal_access_tokens)
+            2. Create a token with scopes:
+               - `api` (API access)
+               - `read_repository` (Read repository)
+               - `write_repository` (Write repository)
+            3. Copy the generated token
+            
+            [Create new token now →](https://gitlab.com/-/profile/personal_access_tokens/new)
+            """),
+            title="GitLab Token Instructions"
+        ))
+        
+        token = click.prompt('Enter your GitLab Personal Access Token',
+                           hide_input=True, confirmation_prompt=True)
+    
+    result = ctx.obj.auth.setup_git_token(token, name='gitlab')
+    if result.success:
+        console.print(f"[green]✓ {result.message}[/green]")
+    else:
+        console.print(f"[red]✗ {result.message}[/red]")
+
+@auth.command()
+@click.option('--token', help='Bitbucket App Password')
+@click.pass_context
+def setup_bitbucket(ctx, token):
+    """Configure Bitbucket App Password"""
+    if not token:
+        console.print(Panel(
+            Markdown("""
+            # Creating a Bitbucket App Password
+
+            1. Visit [Bitbucket App Passwords](https://bitbucket.org/account/settings/app-passwords/)
+            2. Create a password with permissions:
+               - Repository: Read, Write
+               - Pull requests: Read, Write
+            3. Copy the generated password
+            
+            [Create new app password →](https://bitbucket.org/account/settings/app-passwords/new)
+            """),
+            title="Bitbucket Token Instructions"
+        ))
+        
+        token = click.prompt('Enter your Bitbucket App Password',
+                           hide_input=True, confirmation_prompt=True)
+    
+    result = ctx.obj.auth.setup_git_token(token, name='bitbucket')
+    if result.success:
+        console.print(f"[green]✓ {result.message}[/green]")
+    else:
+        console.print(f"[red]✗ {result.message}[/red]")

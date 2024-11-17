@@ -121,14 +121,15 @@ class AuthService(Service):
     def list_tokens(self) -> Result:
         """List stored GitHub tokens"""
         try:
+            # Get auth configuration
+            auth_config = self.config.get('auth', {})
+            github_tokens = auth_config.get('github_tokens', [])
+            
             tokens = []
-            config_tokens = self.config.get('auth', {}.get('github_tokens'), [])
-
-            for name in config_tokens:
-                key = f"github_token_{name}"
-                if self.keyring.get_credential(key):
-                    tokens.append(name)
-
+            for token_name in github_tokens:
+                if self.keyring.get_credential(f"github_token_{token_name}"):
+                    tokens.append(token_name)
+            
             return self.create_result(
                 True,
                 f"Found {len(tokens)} GitHub tokens",
@@ -142,3 +143,6 @@ class AuthService(Service):
                 error=e
             )
 
+    def list_ssh_keys(self) -> Result:
+        """List SSH keys"""
+        return self.ssh.list_ssh_keys()

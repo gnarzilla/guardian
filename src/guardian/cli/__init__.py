@@ -1,7 +1,6 @@
 # src/guardian/cli/__init__.py
 """
 Guardian CLI Entry Point
-
 This module initializes the Guardian CLI application and registers all available
 commands. It provides the main CLI group and context management.
 """
@@ -27,6 +26,7 @@ class Context:
         self.config = ConfigService()
         self.repo = RepoService()
         self.security = SecurityService()
+        self.cli = cli
 
 @click.group()
 @click.version_option(
@@ -36,25 +36,21 @@ class Context:
 )
 @click.pass_context
 def cli(ctx):
-    """Guardian: Git Authentication & Development Assistant
-    
-    A comprehensive tool for managing Git authentication, security,
-    and development workflows.
-    """
-    # Initialize context with our services
+    """Guardian: Git Authentication & Development Assistant"""
     ctx.obj = Context()
 
-# Import command groups
+# Import all command groups
 from guardian.cli.commands import (
     auth,
     config,
     format_cmd,
     hooks,
     init,
+    docs,
+    deps,
+    proxy
 )
-
-# Add repo separately until it's fully implemented
-from guardian.cli.commands.repo import repo
+from guardian.cli.commands.repo import repo  # Import repo separately
 
 # Define available commands with descriptions
 COMMANDS = [
@@ -63,15 +59,19 @@ COMMANDS = [
     (hooks, "Git hooks management"),
     (format_cmd, "Code formatting"),
     (init, "Initialize Guardian"),
-    (repo, "Repository management"),
+    (docs, "Documentation generation"),
+    (deps, "Dependencies management"),
+    (proxy, "Proxy server management")
 ]
 
-# Register each command
+# Register core commands
 for command, description in COMMANDS:
-    # Set the help text if not already set
-    if not command.help and description:
+    if not getattr(command, 'help', None) and description:
         command.help = description
     cli.add_command(command)
+
+# Register repo command separately
+cli.add_command(repo)
 
 if __name__ == "__main__":
     cli()

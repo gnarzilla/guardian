@@ -1,0 +1,23 @@
+# src/guardian/proxy/config/default.yml
+proxy:
+  host: "127.0.0.1"
+  port: 8080
+  cert_path: "~/.guardian/certs"
+
+auth:
+  session_timeout: 3600
+  refresh_before: 300
+  
+  sites:
+    "facebook.com":
+      auth_type: "session"
+      login_url: "https://www.facebook.com/login"
+      success_indicators:
+        - cookie: "c_user"
+    
+    "github.com":
+      auth_type: "oauth"
+      auth_url: "https://github.com/login/oauth/authorize"
+      token_url: "https://github.com/login/oauth/access_token"
+      success_indicators:
+        - header: "Authorization"
