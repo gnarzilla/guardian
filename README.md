@@ -78,7 +78,7 @@ Here are some common use cases:
 ### Setting up a new machine
 ```bash
 # Install Guardian
-pip install deadlight-guardian
+pip install guardian
 
 # Setup authentication
 guardian auth setup-ssh
