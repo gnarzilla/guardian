@@ -20,6 +20,33 @@ class AuthService(Service):
         self.keyring = KeyringManager()
         self.config = ConfigService() # Initialize ConfigService
 
+    def check_auth_status(self) -> Result:
+        """Check SSH and GitHub token authentication status"""
+        issues = []
+
+        # Check SSH Keys
+        ssh_keys = self.ssh.list_ssh_keys()
+        if not ssh_keys.data or len(ssh_keys.data.get('keys', [])) == 0:
+            issues.append("No SSH keys configured. Run 'guardian auth setup-ssh' to generate keys.")
+
+        # Check GitHub Token
+        try:
+            github_token = self.config.get('github_token', default=None)
+            if not github_token or not isinstance(github_token, str) or not github_token.strip():
+                issues.append("GitHub token not configured or invalid. Run 'guardian auth setup-github' to configure.")
+        except AttributeError:
+            issues.append("Configuration service is misconfigured. Unable to retrieve GitHub token.")
+
+        # Return Results
+        if issues:
+            return self.create_result(
+                False,
+                "Authentication issues detected",
+                {'issues': issues}
+            )
+
+        return self.create_result(True, "Authentication is configured.")
+
     def setup_ssh(self, email: str, force: bool = False) -> Result:
         """Setup SSH authentication"""
         try:

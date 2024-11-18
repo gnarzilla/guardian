@@ -65,30 +65,39 @@ def setup_github(ctx, token, name):
 @click.pass_context
 def setup_ssh(ctx, email, force):
     """Generate and configure SSH keys"""
+    # Inform the user about the force option
     if not force:
         console.print(Panel(
             "[yellow]Note: Use --force to overwrite existing keys[/yellow]",
             title="SSH Key Generation"
         ))
-    
+
+    # Call the setup method
     result = ctx.obj.auth.setup_ssh(email, force)
+
+    # Handle the result
     if result.success:
         console.print(f"[green]✓ {result.message}[/green]")
-        if result.data and 'key_path' in result.data:
-            pub_key_path = f"{result.data['key_path']}.pub"
-            console.print(f"\nPublic key path: {pub_key_path}")
+        if 'pub_key_path' in result.data:
+            pub_key_path = result.data['pub_key_path']
             try:
+                # Read and display public key content
                 with open(pub_key_path) as f:
                     key_content = f.read().strip()
                 console.print("\nPublic key (ready to copy):")
                 console.print(Panel(key_content, expand=False))
+            except FileNotFoundError:
+                console.print(f"[yellow]Public key file not found at {pub_key_path}[/yellow]")
             except Exception as e:
                 console.print(f"[yellow]Could not read public key: {e}[/yellow]")
     else:
+        # Handle failure or warnings
         console.print(f"[red]✗ {result.message}[/red]")
+        if 'pub_key_path' in result.data:
+            console.print(f"[yellow]Existing public key: {result.data['pub_key_path']}[/yellow]")
         if not force:
             console.print("\nTip: Use --force to overwrite existing keys:")
-            console.print("  guardian auth setup-ssh --email your@email.com --force")
+            console.print(f"  guardian auth setup-ssh --email {email} --force")
 
 @auth.command()
 @click.pass_context

@@ -49,11 +49,13 @@ class SSHManager(Service):
     def generate_key(self, email: str, force: bool = False) -> Result:
         """Generate new SSH key"""
         key_path = self.ssh_dir / 'id_ed25519'
+        pub_key_path = key_path.with_suffix('.pub') # Derive public key path
         
         if key_path.exists() and not force:
             return self.create_result(
                 False,
-                f"SSH key already exists at {key_path}. Use --force to overwrite."
+                f"SSH key already exists at {key_path}. Use --force to overwrite.",
+                {'key_path': str(key_path), 'pub_key_path': str(pub_key_path)}
             )
         
         try:
@@ -62,19 +64,22 @@ class SSHManager(Service):
                 '-t', 'ed25519',
                 '-C', email,
                 '-f', str(key_path),
-                '-N', ''
+                '-N', '' # Empty passphrase
             ]
             
             subprocess.run(cmd, check=True)
             key_path.chmod(0o600)
-            (key_path.parent / f"{key_path.name}.pub").chmod(0o644)
+            pub_key_path.chmod(0o644)
             
             return self.create_result(
                 True,
                 "SSH key generated successfully",
-                {'key_path': str(key_path)}
+                {
+                    'key_path': str(key_path),
+                    'pub_key_path': str(pub_key_path)
+                }
             )
-            
+
         except subprocess.CalledProcessError as e:
             return self.create_result(
                 False,

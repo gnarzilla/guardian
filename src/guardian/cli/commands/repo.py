@@ -2,6 +2,7 @@
 import click
 from rich.console import Console
 from rich.panel import Panel
+import subprocess
 from pathlib import Path
 from guardian.services.git import GitService
 
@@ -204,31 +205,37 @@ def push(ctx, path, remote, branch):
     """Push changes to remote repository"""
     try:
         path = Path(path)
+        
+        # Ensure it's a Git repository
         if not (path / '.git').exists():
-            console.print("[red]✗[/red] Not a git repository")
+            console.print("[red]✗ Not a git repository[/red]")
             return
         
+        # Check authentication status
+        auth_status = ctx.obj.auth.check_auth_status()
+        if not auth_status.success:
+            console.print("[yellow]⚠ Authentication issues detected:[/yellow]")
+            for issue in auth_status.data.get('issues', []):
+                console.print(f"  • {issue}")
+            if not click.confirm("Continue anyway?"):
+                console.print("[red]✗ Push canceled[/red]")
+                return
+        
+        # Construct the Git push command
         cmd = ['git', 'push', remote]
         if branch:
             cmd.append(branch)
         
-        # Check auth before pushing
-        auth_status = ctx.obj.auth.check_auth_status()
-        if not auth_status.success:
-            console.print("[yellow]![/yellow] Authentication issues detected:")
-            for issue in auth_status.data['issues']:
-                console.print(f"  • {issue}")
-            if not click.confirm("Continue anyway?"):
-                return
-        
+        # Execute the push command
         result = subprocess.run(cmd, cwd=path, capture_output=True, text=True)
         if result.returncode == 0:
-            console.print("[green]✓[/green] Push successful")
+            console.print("[green]✓ Push successful[/green]")
         else:
-            console.print(f"[red]✗[/red] Push failed: {result.stderr}")
-            
+            console.print("[red]✗ Push failed[/red]")
+            console.print(result.stderr.strip())
+    
     except Exception as e:
-        console.print(f"[red]✗[/red] Error: {str(e)}")
+        console.print(f"[red]✗ Error: {str(e)}[/red]")
 
 @repo.command()
 @click.argument('url')
